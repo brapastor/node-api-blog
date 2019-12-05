@@ -41,7 +41,11 @@ let controller = {
             // Asignar Valores
             article.title = params.title;
             article.content = params.content;
-            article.image = null;
+            if (params.image) {
+                article.image = params.image
+            } else {
+                article.image = null;
+            }
 
             // Guardar el Articulo en la bd
             article.save((err, articleStored) => {
@@ -150,7 +154,7 @@ let controller = {
 
                     return res.status(200).send({
                         status: 'success',
-                        message: articleUpdated
+                        article: articleUpdated
                     });
                 });
             } else {
@@ -228,23 +232,27 @@ let controller = {
         } else {
             // si todo es Valido, sacando la id de la url
             let articleId = req.params.id;
+            if (articleId) {
+                // Buscar el articulo, asignarle el nombre de la imagen y actualizarlo
+                Article.findOneAndUpdate({_id: articleId}, {image: file_name}, {new: true}, (err, articleUpdated) => {
+                    if (err || !articleUpdated) {
+                        return res.status(200).send({
+                            status: 'error',
+                            article: 'Error al guadar la imagen de articulo'
+                        });
+                    }
 
-            // Buscar el articulo, asignarle el nombre de la imagen y actualizarlo
-            Article.findOneAndUpdate({_id: articleId}, {image: file_name}, {new: true}, (err, articleUpdated) => {
-                if (err || !articleUpdated) {
                     return res.status(200).send({
-                        status: 'error',
-                        article: 'Error al guadar la imagen de articulo'
+                        status: 'success',
+                        article: articleUpdated
                     });
-                }
-
+                });
+            } else {
                 return res.status(200).send({
                     status: 'success',
-                    article: articleUpdated
+                    image: file_name
                 });
-            });
-
-
+            }
         }
     },
     getImage: (req, res) => {
@@ -275,14 +283,14 @@ let controller = {
                 {"content": {"$regex": seachStrig, "$options": "i"}},
             ]
         }).sort([['date', 'descending']])
-            .exec((err,articles)=>{
-                if (err){
+            .exec((err, articles) => {
+                if (err) {
                     return res.status(500).send({
                         status: 'error',
                         message: 'Error en la peticion'
                     });
                 }
-                if (!articles || articles.length <= 0){
+                if (!articles || articles.length <= 0) {
                     return res.status(404).send({
                         status: 'error',
                         message: 'No hay articulos que coincidan con tu busqueda'
